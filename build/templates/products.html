@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen py-8">
+    <!-- Header -->
+    <div class="text-center mb-12">
+        <h1 class="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
+            Product Catalog
+        </h1>
+        <p class="text-xl text-gray-300 max-w-2xl mx-auto">
+            Browse our extensive collection of premium products. Use the category filter to find exactly what you're looking for.
+        </p>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="max-w-4xl mx-auto mb-8">
+        <div class="backdrop-blur-md bg-white/10 rounded-xl p-6 border border-white/20 shadow-xl">
+            <h2 class="text-2xl font-semibold mb-4">Filter Products</h2>
+            <div class="flex flex-wrap gap-4">
+                <button onclick="filterProducts('')" class="btn-filter btn-active">
+                    All Products
+                </button>
+                <button onclick="filterProducts('Electronics')" class="btn-filter">
+                    Electronics
+                </button>
+                <button onclick="filterProducts('Home')" class="btn-filter">
+                    Home & Garden
+                </button>
+                <button onclick="filterProducts('Clothing')" class="btn-filter">
+                    Fashion
+                </button>
+            </div>
+            
+            <!-- Custom Category Input -->
+            <div class="mt-6">
+                <label class="block text-sm font-medium mb-2">Custom Category Filter:</label>
+                <div class="flex gap-2">
+                    <input type="text" id="customCategory" placeholder="Enter category name..." 
+                           class="flex-1 px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500">
+                    <button onclick="filterByCustomCategory()" class="btn-custom-filter">
+                        Filter
+                    </button>
+                </div>
+                <p class="text-sm text-gray-400 mt-2">
+                    Try different category values to explore our product database.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Products Grid -->
+    <div id="productsContainer" class="max-w-7xl mx-auto">
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="productsGrid">
+            <!-- Products will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading" class="text-center py-12 hidden">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <p class="mt-2 text-gray-400">Loading products...</p>
+    </div>
+
+    <!-- No Products State -->
+    <div id="noProducts" class="text-center py-12 hidden">
+        <div class="text-6xl mb-4">📦</div>
+        <h3 class="text-xl font-semibold mb-2">No Products Found</h3>
+        <p class="text-gray-400">Try adjusting your filter criteria.</p>
+    </div>
+</div>
+
+<script>
+let currentFilter = '';
+
+function showLoading() {
+    document.getElementById('loading').classList.remove('hidden');
+    document.getElementById('productsGrid').innerHTML = '';
+    document.getElementById('noProducts').classList.add('hidden');
+}
+
+function hideLoading() {
+    document.getElementById('loading').classList.add('hidden');
+}
+
+function showNoProducts() {
+    document.getElementById('noProducts').classList.remove('hidden');
+    document.getElementById('productsGrid').innerHTML = '';
+}
+
+function filterProducts(category) {
+    currentFilter = category;
+    showLoading();
+    
+    // Update button states
+    document.querySelectorAll('button').forEach(btn => {
+        if (btn.textContent === category || (category === '' && btn.textContent === 'All Products')) {
+            btn.className = 'btn-filter btn-active';
+        } else {
+            btn.className = 'btn-filter';
+        }
+    });
+    
+    fetchProducts(category);
+}
+
+function filterByCustomCategory() {
+    const customCategory = document.getElementById('customCategory').value.trim();
+    if (customCategory) {
+        currentFilter = customCategory;
+        showLoading();
+        fetchProducts(customCategory);
+    }
+}
+
+function fetchProducts(category) {
+    const url = category ? `/api/products?category=${encodeURIComponent(category)}` : '/api/products';
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(products => {
+            hideLoading();
+            displayProducts(products);
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error fetching products:', error);
+            showNoProducts();
+        });
+}
+
+function displayProducts(products) {
+    const grid = document.getElementById('productsGrid');
+    
+    if (!products || products.length === 0) {
+        showNoProducts();
+        return;
+    }
+    
+    grid.innerHTML = products.map(product => `
+        <div class="backdrop-blur-md bg-white/10 rounded-xl p-6 border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
+            <div class="text-4xl mb-4">${getProductIcon(product.category)}</div>
+            <h3 class="text-xl font-semibold mb-2">${product.name}</h3>
+            <p class="text-gray-400 text-sm mb-3">SKU: ${product.sku}</p>
+            <p class="text-gray-300 mb-4">${product.description}</p>
+            <div class="flex justify-between items-center">
+                <span class="text-2xl font-bold text-green-400">$${product.price}</span>
+                <span class="px-3 py-1 bg-blue-600 rounded-full text-xs">${product.category}</span>
+            </div>
+            ${product.status === 'unreleased' ? '<div class="mt-2 px-2 py-1 bg-red-600 rounded text-xs text-center">Unreleased</div>' : ''}
+        </div>
+    `).join('');
+}
+
+function getProductIcon(category) {
+    const icons = {
+        'Electronics': '📱',
+        'Home': '🏠',
+        'Clothing': '👕'
+    };
+    return icons[category] || '📦';
+}
+
+// Load all products on page load
+document.addEventListener('DOMContentLoaded', () => {
+    filterProducts('');
+});
+
+// Allow Enter key in custom category input
+document.getElementById('customCategory').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        filterByCustomCategory();
+    }
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen py-8">
+    <!-- Header -->
+    <div class="text-center mb-12">
+        <h1 class="text-5xl font-bold mb-4 bg-gradient-to-r from-red-400 to-orange-600 bg-clip-text text-transparent">
+            Admin Portal
+        </h1>
+        <p class="text-xl text-gray-300 max-w-2xl mx-auto">
+            Product management dashboard for TargetCorp store administrators.
+        </p>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div class="max-w-6xl mx-auto">
+        <!-- Stats Cards -->
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <div class="backdrop-blur-md bg-white/10 rounded-xl p-6 border border-white/20 shadow-xl">
+                <div class="text-blue-400 text-3xl mb-2">📊</div>
+                <h3 class="text-lg font-semibold mb-2">Total Products</h3>
+                <p class="text-2xl font-bold text-blue-400" id="totalProducts">-</p>
+            </div>
+            
+            <div class="backdrop-blur-md bg-white/10 rounded-xl p-6 border border-white/20 shadow-xl">
+                <div class="text-green-400 text-3xl mb-2">✅</div>
+                <h3 class="text-lg font-semibold mb-2">Public Products</h3>
+                <p class="text-2xl font-bold text-green-400" id="publicProducts">-</p>
+            </div>
+            
+            <div class="backdrop-blur-md bg-white/10 rounded-xl p-6 border border-white/20 shadow-xl">
+                <div class="text-red-400 text-3xl mb-2">🔒</div>
+                <h3 class="text-lg font-semibold mb-2">Unreleased Products</h3>
+                <p class="text-2xl font-bold text-red-400" id="unreleasedProducts">-</p>
+            </div>
+        </div>
+
+        <!-- Product Management Section -->
+        <div class="backdrop-blur-md bg-white/10 rounded-xl p-6 border border-white/20 shadow-xl mb-8">
+            <h2 class="text-2xl font-semibold mb-6">Product Management</h2>
+            
+            <!-- Quick Actions -->
+            <div class="flex flex-wrap gap-4 mb-6">
+                <button onclick="loadAllProducts()" class="btn-admin btn-blue">
+                    View All Products
+                </button>
+                <button onclick="loadPublicProducts()" class="btn-admin btn-green">
+                    View Public Only
+                </button>
+                <button onclick="loadUnreleasedProducts()" class="btn-admin btn-red">
+                    View Unreleased Only
+                </button>
+            </div>
+
+            <!-- Category Filter -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium mb-2">Filter by Category:</label>
+                <div class="flex gap-2">
+                    <select id="categoryFilter" class="px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500">
+                        <option value="">All Categories</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Home">Home & Garden</option>
+                        <option value="Clothing">Fashion</option>
+                    </select>
+                    <button onclick="filterByCategory()" class="btn-admin btn-purple">
+                        Filter
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Table -->
+        <div class="backdrop-blur-md bg-white/10 rounded-xl p-6 border border-white/20 shadow-xl">
+            <h3 class="text-xl font-semibold mb-4">Product List</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b border-gray-600">
+                            <th class="py-3 px-4 font-semibold">Name</th>
+                            <th class="py-3 px-4 font-semibold">SKU</th>
+                            <th class="py-3 px-4 font-semibold">Category</th>
+                            <th class="py-3 px-4 font-semibold">Price</th>
+                            <th class="py-3 px-4 font-semibold">Status</th>
+                            <th class="py-3 px-4 font-semibold">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productsTableBody">
+                        <!-- Products will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="text-center py-12 hidden">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            <p class="mt-2 text-gray-400">Loading products...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+function showLoading() {
+    document.getElementById('loading').classList.remove('hidden');
+    document.getElementById('productsTableBody').innerHTML = '';
+}
+
+function hideLoading() {
+    document.getElementById('loading').classList.add('hidden');
+}
+
+function loadAllProducts() {
+    showLoading();
+    fetch('/api/products')
+        .then(response => response.json())
+        .then(products => {
+            hideLoading();
+            displayProductsTable(products);
+            updateStats(products);
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error loading products:', error);
+        });
+}
+
+function loadPublicProducts() {
+    showLoading();
+    fetch('/api/products')
+        .then(response => response.json())
+        .then(products => {
+            hideLoading();
+            const publicProducts = products.filter(p => p.status === 'public');
+            displayProductsTable(publicProducts);
+            updateStats(products);
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error loading products:', error);
+        });
+}
+
+function loadUnreleasedProducts() {
+    showLoading();
+    fetch('/api/products')
+        .then(response => response.json())
+        .then(products => {
+            hideLoading();
+            const unreleasedProducts = products.filter(p => p.status === 'unreleased');
+            displayProductsTable(unreleasedProducts);
+            updateStats(products);
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error loading products:', error);
+        });
+}
+
+function filterByCategory() {
+    const category = document.getElementById('categoryFilter').value;
+    if (category) {
+        showLoading();
+        fetch(`/api/products?category=${encodeURIComponent(category)}`)
+            .then(response => response.json())
+            .then(products => {
+                hideLoading();
+                displayProductsTable(products);
+                updateStats(products);
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error filtering products:', error);
+            });
+    } else {
+        loadAllProducts();
+    }
+}
+
+function displayProductsTable(products) {
+    const tbody = document.getElementById('productsTableBody');
+    
+    if (!products || products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-gray-400">No products found</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = products.map(product => `
+        <tr class="border-b border-gray-700 hover:bg-white/5">
+            <td class="py-3 px-4">
+                <div>
+                    <div class="font-medium">${product.name}</div>
+                    <div class="text-sm text-gray-400">${product.description.substring(0, 50)}...</div>
+                </div>
+            </td>
+            <td class="py-3 px-4 font-mono text-sm">${product.sku}</td>
+            <td class="py-3 px-4">
+                <span class="px-2 py-1 bg-blue-600 rounded text-xs">${product.category}</span>
+            </td>
+            <td class="py-3 px-4 font-bold text-green-400">$${product.price}</td>
+            <td class="py-3 px-4">
+                <span class="px-2 py-1 rounded text-xs ${product.status === 'public' ? 'bg-green-600' : 'bg-red-600'}">
+                    ${product.status}
+                </span>
+            </td>
+            <td class="py-3 px-4">
+                <button class="px-3 py-1 bg-blue-600 rounded text-xs hover:bg-blue-700 transition-colors">
+                    Edit
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function updateStats(products) {
+    const total = products.length;
+    const public = products.filter(p => p.status === 'public').length;
+    const unreleased = products.filter(p => p.status === 'unreleased').length;
+    
+    document.getElementById('totalProducts').textContent = total;
+    document.getElementById('publicProducts').textContent = public;
+    document.getElementById('unreleasedProducts').textContent = unreleased;
+}
+
+// Load all products on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadAllProducts();
+});
+</script>
+{% endblock %} 
