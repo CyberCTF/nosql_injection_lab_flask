@@ -1,0 +1,45 @@
+{
+  "site": {
+    "name": "TargetCorp Store",
+    "description": "Premium Electronics & Home Goods - Your trusted source for quality products",
+    "logo": "/logo.svg",
+    "copyright": "2025 TargetCorp Inc."
+  },
+  "navigation": {
+    "main": [
+      { "link": "/", "title": "Home" },
+      { "link": "/products", "title": "Products" },
+      { "link": "/admin", "title": "Admin Portal" }
+    ],
+    "auth": []
+  },
+  "footer": {
+    "links": [
+      { "link": "/", "title": "Home" },
+      { "link": "/products", "title": "Products" },
+      { "link": "/admin", "title": "Admin Portal" }
+    ],
+    "social": [
+      {
+        "name": "Website",
+        "href": "https://www.targetcorp.com",
+        "icon": "website"
+      },
+      {
+        "name": "GitHub",
+        "href": "https://github.com/targetcorp",
+        "icon": "github"
+      }
+    ]
+  },
+  "challenge": {
+    "title": "Product Management System",
+    "description": "Browse our extensive catalog of electronics, home goods, and clothing. Use the category filter to find exactly what you're looking for.",
+    "skills": ["NoSQL", "Security", "Web", "API Testing"],
+    "points": 160
+  },
+  "cta": {
+    "label": "Browse Products",
+    "link": "/products"
+  }
+} 
